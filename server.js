@@ -1,285 +1,613 @@
 const express = require('express');
 const cors = require('cors');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = 5000;
 
+// Middleware
 app.use(cors({
   origin: 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
 
-// Проверка работы
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Cinema API работает',
-    endpoints: [
-      '/api/auth/register',
-      '/api/auth/login', 
-      '/api/movies',
-      '/api/sessions',
-      '/api/tickets'
-    ]
-  });
+// Подключение к PostgreSQL
+const pool = new Pool({
+  host: 'localhost',
+  port: 5432,
+  database: 'cinema_db',
+  user: 'postgres',
+  password: '1111',
 });
 
-// Регистрация
+// Проверка работы
+app.get('/api/health', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW() as time');
+    res.json({
+      status: 'OK',
+      message: 'Сервер работает',
+      databaseTime: result.rows[0].time
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Регистрация - возвращаем полные данные
 app.post('/api/auth/register', (req, res) => {
   console.log('Регистрация:', req.body);
-  
+
   const { username, email, password, role = 'USER' } = req.body;
-  
-  res.json({ 
-    success: true, 
+
+  res.json({
+    success: true,
     message: 'Регистрация успешна',
-    user: { 
+    token: 'auth-token-' + Date.now(),
+    user: {
       id: Date.now(),
       username,
       email,
       role,
-      name: username 
+      name: username
     }
   });
 });
 
-// Вход
+// Вход - возвращаем полные данные
 app.post('/api/auth/login', (req, res) => {
   console.log('Вход:', req.body);
-  
+
   const { email, password } = req.body;
-  
+
   res.json({
     success: true,
     message: 'Вход выполнен',
-    token: 'test-jwt-token-' + Date.now(),
-    user: { 
+    token: 'auth-token-' + Date.now(),
+    user: {
       id: 1,
       email: email,
       username: email.split('@')[0],
-      name: email.split('@')[0],
+      name: email.split('@')[0] || 'Пользователь',
       role: 'USER'
     }
   });
 });
 
-// Фильмы - ИСПРАВЛЕННЫЙ ВАРИАНТ
-app.get('/api/movies', (req, res) => {
-  const movies = [
-    { 
-      id: 1, 
-      title: 'Интерстеллар', 
-      description: 'Фантастика о путешествии сквозь червоточину',
-      duration: 169, // ← из duration_minutes в duration
-      duration_minutes: 169, // оставляем для совместимости
-      release_year: 2014,
-      genre: 'Фантастика',
-      posterUrl: 'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg',
-      poster_url: 'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg'
-    },
-    { 
-      id: 2, 
-      title: 'Криминальное чтиво', 
-      description: 'Культовый фильм Квентина Тарантино',
-      duration: 154, // ← из duration_minutes в duration
-      duration_minutes: 154,
-      release_year: 1994,
-      genre: 'Криминал',
-      posterUrl: 'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg',
-      poster_url: 'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg'
-    },
-    { 
-      id: 3, 
-      title: 'Зеленая миля', 
-      description: 'Драма о тюремном надзирателе и заключенном с необычными способностями',
-      duration: 189,
-      duration_minutes: 189,
-      release_year: 1999,
-      genre: 'Драма',
-      posterUrl: 'https://m.media-amazon.com/images/M/MV5BMTUxMzQyNjA5MF5BMl5BanBnXkFtZTYwOTU2NTY3._V1_FMjpg_UX1000_.jpg',
-      poster_url: 'https://m.media-amazon.com/images/M/MV5BMTUxMzQyNjA5MF5BMl5BanBnXkFtZTYwOTU2NTY3._V1_FMjpg_UX1000_.jpg',
-      ageRating: '16+'
-    },
-    { 
-      id: 4, 
-      title: 'Побег из Шоушенка', 
-      description: 'История о дружбе и надежде в тюрьме',
-      duration: 142,
-      duration_minutes: 142,
-      release_year: 1994,
-      genre: 'Драма',
-      posterUrl: 'https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NmNlLWJiNDMtZDViZWM2MzIxZDYwXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_FMjpg_UX1000_.jpg',
-      poster_url: 'https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NmNlLWJiNDMtZDViZWM2MzIxZDYwXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_FMjpg_UX1000_.jpg',
-      ageRating: '16+'
+// ФИЛЬМЫ
+app.get('/api/movies', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        id,
+        title,
+        description,
+        duration_minutes as "durationMinutes",
+        duration_minutes as duration,
+        release_year as "releaseYear",
+        genre,
+        poster_url as "posterUrl",
+        poster_url as "poster_url"
+      FROM movies
+      ORDER BY id
+    `);
+
+    res.json({
+      success: true,
+      movies: result.rows
+    });
+  } catch (error) {
+    console.error('Ошибка БД при получении фильмов:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// СЕАНСЫ (валюта в BYN)
+app.get('/api/sessions', async (req, res) => {
+  try {
+    console.log('Запрос сеансов из БД...');
+
+    const result = await pool.query(`
+      SELECT
+        s.id,
+        s.movie_id as "movieId",
+        m.title as "movieTitle",
+        s.start_time as "startTime",
+        s.hall_number as "hallNumber",
+        'Зал ' || s.hall_number as "hallName",
+        ROUND(s.price / 300, 2) as price, -- Конвертация RUB → BYN
+        s.available_seats as "availableSeats",
+        'Киномакс' as "cinemaName",
+        '2D' as format
+      FROM sessions s
+      JOIN movies m ON s.movie_id = m.id
+      WHERE s.start_time > NOW()
+      ORDER BY s.start_time
+    `);
+
+    console.log(`Найдено сеансов: ${result.rows.length}`);
+
+    if (result.rows.length === 0) {
+      console.log('Сеансов нет в БД, создаем тестовый...');
+
+      await pool.query(`
+        INSERT INTO sessions (movie_id, start_time, hall_number, price, available_seats)
+        SELECT id, NOW() + INTERVAL '2 hours', 1, 105.00, 100
+        FROM movies
+        LIMIT 1
+        ON CONFLICT DO NOTHING;
+      `);
+
+      const newResult = await pool.query(`
+        SELECT
+          s.id,
+          s.movie_id as "movieId",
+          m.title as "movieTitle",
+          s.start_time as "startTime",
+          s.hall_number as "hallNumber",
+          'Зал ' || s.hall_number as "hallName",
+          ROUND(s.price / 300, 2) as price,
+          s.available_seats as "availableSeats",
+          'Киномакс' as "cinemaName",
+          '2D' as format
+        FROM sessions s
+        JOIN movies m ON s.movie_id = m.id
+        ORDER BY s.start_time
+      `);
+
+      res.json({
+        success: true,
+        sessions: newResult.rows
+      });
+
+    } else {
+      res.json({
+        success: true,
+        sessions: result.rows
+      });
     }
-  ];
-  
+
+  } catch (error) {
+    console.error('Ошибка при получении сеансов:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Предстоящие сеансы
+app.get('/api/sessions/upcoming', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        s.id,
+        s.movie_id as "movieId",
+        m.title as "movieTitle",
+        s.start_time as "startTime",
+        s.hall_number as "hallNumber",
+        'Зал ' || s.hall_number as "hallName",
+        ROUND(s.price / 300, 2) as price,
+        s.available_seats as "availableSeats",
+        'Киномакс' as "cinemaName",
+        '2D' as format
+      FROM sessions s
+      JOIN movies m ON s.movie_id = m.id
+      WHERE s.start_time > NOW()
+      ORDER BY s.start_time
+      LIMIT 10
+    `);
+
+    res.json({
+      success: true,
+      sessions: result.rows
+    });
+
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Получить сеанс по ID
+app.get('/api/sessions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        s.id,
+        s.movie_id as "movieId",
+        m.title as "movieTitle",
+        s.start_time as "startTime",
+        s.hall_number as "hallNumber",
+        'Зал ' || s.hall_number as "hallName",
+        ROUND(s.price / 300, 2) as price,
+        s.available_seats as "availableSeats",
+        'Киномакс' as "cinemaName"
+      FROM sessions s
+      JOIN movies m ON s.movie_id = m.id
+      WHERE s.id = $1
+    `, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Сеанс не найден'
+      });
+    }
+
+    res.json({
+      success: true,
+      session: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// СЕАНСЫ по фильму
+app.get('/api/sessions/movie/:movieId', async (req, res) => {
+  try {
+    const { movieId } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        s.id,
+        s.movie_id as "movieId",
+        m.title as "movieTitle",
+        s.start_time as "startTime",
+        s.hall_number as "hallNumber",
+        'Зал ' || s.hall_number as "hallName",
+        ROUND(s.price / 300, 2) as price,
+        s.available_seats as "availableSeats",
+        'Киномакс' as "cinemaName",
+        '2D' as format
+      FROM sessions s
+      JOIN movies m ON s.movie_id = m.id
+      WHERE s.movie_id = $1 AND s.start_time > NOW()
+      ORDER BY s.start_time
+    `, [movieId]);
+
+    res.json({
+      success: true,
+      sessions: result.rows
+    });
+
+  } catch (error) {
+    console.error('Ошибка:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// СОЗДАНИЕ ЗАКАЗА (исправленный)
+app.post('/api/orders', async (req, res) => {
+  try {
+    console.log('📦 Создание заказа:', req.body);
+
+    const { userId = 1, sessionId, seats, totalPrice } = req.body;
+
+    if (!sessionId || !seats || seats.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Недостаточно данных: нужны sessionId и seats'
+      });
+    }
+
+    // Преобразуем seats в массив если это строка
+    const seatsArray = Array.isArray(seats) ? seats : [seats];
+
+    const result = await pool.query(`
+      INSERT INTO orders (user_id, session_id, seats, total_price, status)
+      VALUES ($1, $2, $3, $4, 'confirmed')
+      RETURNING id, session_id as "sessionId", seats, total_price as "totalPrice", status, created_at as "createdAt";
+    `, [userId, sessionId, seatsArray, totalPrice || 0]);
+
+    console.log('✅ Заказ создан:', result.rows[0]);
+
+    res.json({
+      success: true,
+      message: 'Заказ успешно создан',
+      order: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('❌ Ошибка создания заказа:', error);
+
+    // Если ошибка с seats, покажем подсказку
+    if (error.message.includes('seats') || error.message.includes('столбец')) {
+      console.log('⚠️  Вероятно, таблица orders не имеет столбца seats');
+      console.log('   Выполните: ALTER TABLE orders ADD COLUMN seats TEXT[] DEFAULT \'{}\';');
+    }
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      message: 'Ошибка при создании заказа. Проверьте структуру таблицы orders.'
+    });
+  }
+});
+
+// ПОЛУЧЕНИЕ ЗАКАЗОВ ПОЛЬЗОВАТЕЛЯ (исправленный)
+app.get('/api/orders/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    console.log(`📋 Запрос заказов пользователя ${userId}`);
+
+    // Сначала проверяем структуру таблицы
+    try {
+      // Проверяем существование столбца seats
+      const checkResult = await pool.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'orders' AND column_name = 'seats'
+      `);
+
+      const hasSeatsColumn = checkResult.rows.length > 0;
+
+      if (!hasSeatsColumn) {
+        console.log('⚠️  Столбец seats не существует в таблице orders');
+
+        // Временно возвращаем без seats
+        const result = await pool.query(`
+          SELECT
+            o.id,
+            o.session_id as "sessionId",
+            o.total_price as "totalPrice",
+            o.status,
+            o.created_at as "createdAt",
+            s.start_time as "sessionTime",
+            m.title as "movieTitle",
+            m.poster_url as "posterUrl"
+          FROM orders o
+          LEFT JOIN sessions s ON o.session_id = s.id
+          LEFT JOIN movies m ON s.movie_id = m.id
+          WHERE o.user_id = $1
+          ORDER BY o.created_at DESC
+          LIMIT 20
+        `, [userId || 1]);
+
+        // Добавляем пустой массив seats к результату
+        const ordersWithSeats = result.rows.map(order => ({
+          ...order,
+          seats: []
+        }));
+
+        return res.json({
+          success: true,
+          orders: ordersWithSeats,
+          warning: 'Столбец seats отсутствует в таблице orders'
+        });
+      }
+
+      // Если столбец существует, запрашиваем нормально
+      const result = await pool.query(`
+        SELECT
+          o.id,
+          o.session_id as "sessionId",
+          o.seats,
+          o.total_price as "totalPrice",
+          o.status,
+          o.created_at as "createdAt",
+          s.start_time as "sessionTime",
+          m.title as "movieTitle",
+          m.poster_url as "posterUrl"
+        FROM orders o
+        LEFT JOIN sessions s ON o.session_id = s.id
+        LEFT JOIN movies m ON s.movie_id = m.id
+        WHERE o.user_id = $1
+        ORDER BY o.created_at DESC
+        LIMIT 20
+      `, [userId || 1]);
+
+      console.log(`📊 Найдено заказов: ${result.rows.length}`);
+
+      res.json({
+        success: true,
+        orders: result.rows
+      });
+
+    } catch (dbError) {
+      console.error('❌ Ошибка БД:', dbError.message);
+
+      // Возвращаем тестовые данные
+      res.json({
+        success: true,
+        orders: [
+          {
+            id: 1,
+            sessionId: 1,
+            seats: ['R1S1', 'R1S2'],
+            totalPrice: 7.00,
+            status: 'confirmed',
+            createdAt: new Date().toISOString(),
+            sessionTime: new Date(Date.now() + 2*60*60*1000).toISOString(),
+            movieTitle: 'Интерстеллар',
+            posterUrl: 'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_FMjpg_UX1000_.jpg'
+          }
+        ],
+        warning: 'Используются тестовые данные из-за ошибки БД'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Общая ошибка:', error);
+    res.json({
+      success: true,
+      orders: [],
+      error: error.message
+    });
+  }
+});
+
+// ПОЛУЧЕНИЕ ЗАКАЗА ПО ID
+app.get('/api/orders/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        o.id,
+        o.session_id as "sessionId",
+        o.seats,
+        o.total_price as "totalPrice",
+        o.status,
+        o.created_at as "createdAt",
+        s.start_time as "sessionTime",
+        m.title as "movieTitle",
+        m.poster_url as "posterUrl"
+      FROM orders o
+      JOIN sessions s ON o.session_id = s.id
+      JOIN movies m ON s.movie_id = m.id
+      WHERE o.id = $1
+    `, [orderId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Заказ не найден'
+      });
+    }
+
+    res.json({
+      success: true,
+      order: result.rows[0]
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения заказа:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ТЕСТОВЫЙ ЭНДПОИНТ (можно удалить позже)
+app.post('/api/orders/test', (req, res) => {
+  console.log('🧪 Тестовый запрос на создание заказа:', req.body);
+
   res.json({
     success: true,
-    movies: movies
-  });
-});
-
-// Сеансы - заглушки
-app.get('/api/sessions', (req, res) => {
-  const sessions = [
-    {
-      id: 1,
-      movieId: 1,
-      movieTitle: 'Интерстеллар',
-      startTime: '2025-12-15T18:00:00',
-      endTime: '2025-12-15T21:09:00',
-      hallId: 1,
-      hallName: 'Зал 1',
-      price: 450,
-      availableSeats: 120
-    },
-    {
-      id: 2,
-      movieId: 2,
-      movieTitle: 'Криминальное чтиво',
-      startTime: '2025-12-15T20:00:00',
-      endTime: '2025-12-15T22:34:00',
-      hallId: 2,
-      hallName: 'Зал 2',
-      price: 350,
-      availableSeats: 80
+    message: 'Тестовый заказ создан (без БД)',
+    order: {
+      id: Math.floor(Math.random() * 1000),
+      sessionId: req.body.sessionId,
+      seats: req.body.seats,
+      totalPrice: req.body.totalPrice,
+      status: 'confirmed',
+      createdAt: new Date().toISOString(),
+      movieTitle: 'Тестовый фильм',
+      sessionTime: new Date(Date.now() + 2*60*60*1000).toISOString()
     }
-  ];
-  
-  res.json({ 
-    success: true, 
-    sessions: sessions 
   });
 });
 
-app.get('/api/sessions/upcoming', (req, res) => {
-  res.json({ 
-    success: true, 
-    sessions: [] 
-  });
+// ПОЛУЧЕНИЕ ЗАКАЗОВ ПОЛЬЗОВАТЕЛЯ
+app.get('/api/orders/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        o.id,
+        o.session_id as "sessionId",
+        o.seats,
+        o.total_price as "totalPrice",
+        o.status,
+        o.created_at as "createdAt",
+        s.start_time as "sessionTime",
+        m.title as "movieTitle",
+        m.poster_url as "posterUrl"
+      FROM orders o
+      JOIN sessions s ON o.session_id = s.id
+      JOIN movies m ON s.movie_id = m.id
+      WHERE o.user_id = $1
+      ORDER BY o.created_at DESC
+      LIMIT 20
+    `, [userId || 1]);
+
+    res.json({
+      success: true,
+      orders: result.rows
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения заказов:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
-// Кинотеатры
-app.get('/api/cinemas', (req, res) => {
-  const cinemas = [
-    {
-      id: 1,
-      name: 'Киномакс',
-      city: 'Москва',
-      address: 'ул. Тверская, д. 15',
-      phone: '+7 (495) 123-45-67'
-    },
-    {
-      id: 2,
-      name: 'IMAX Cinema',
-      city: 'Москва',
-      address: 'пр. Мира, д. 211',
-      phone: '+7 (495) 987-65-43'
-    }
-  ];
-  
-  res.json({ 
-    success: true, 
-    cinemas: cinemas 
-  });
+// ПОЛУЧЕНИЕ ЗАКАЗОВ ПОЛЬЗОВАТЕЛЯ
+app.get('/api/orders/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const result = await pool.query(`
+      SELECT
+        o.id,
+        o.session_id as "sessionId",
+        o.seats,
+        o.total_price as "totalPrice",
+        o.status,
+        o.created_at as "createdAt",
+        s.start_time as "sessionTime",
+        m.title as "movieTitle",
+        m.poster_url as "posterUrl"
+      FROM orders o
+      JOIN sessions s ON o.session_id = s.id
+      JOIN movies m ON s.movie_id = m.id
+      WHERE o.user_id = $1
+      ORDER BY o.created_at DESC
+      LIMIT 20
+    `, [userId || 1]);
+
+    res.json({
+      success: true,
+      orders: result.rows
+    });
+
+  } catch (error) {
+    console.error('Ошибка получения заказов:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
-// Залы
-app.get('/api/halls', (req, res) => {
-  const halls = [
-    {
-      id: 1,
-      cinemaId: 1,
-      name: 'Зал 1',
-      capacity: 150,
-      has3D: true,
-      hasDolbyAtmos: true
-    },
-    {
-      id: 2,
-      cinemaId: 1,
-      name: 'Зал 2',
-      capacity: 100,
-      has3D: true,
-      hasDolbyAtmos: false
-    }
-  ];
-  
-  res.json({ 
-    success: true, 
-    halls: halls 
-  });
-});
-
-// Билеты - заглушки
+// Остальные эндпоинты
 app.get('/api/tickets', (req, res) => {
-  res.json({ 
-    success: true, 
-    tickets: [] 
-  });
+  res.json({ success: true, tickets: [] });
 });
 
-// Поиск фильмов
-app.get('/api/movies/search', (req, res) => {
-  const { title } = req.query;
-  
-  // Здесь будет реальный поиск
-  res.json({ 
-    success: true, 
-    movies: [],
-    searchQuery: title 
-  });
+app.get('/api/cinemas', (req, res) => {
+  res.json({ success: true, cinemas: [] });
 });
 
-// Получение фильма по ID
-app.get('/api/movies/:id', (req, res) => {
-  const { id } = req.params;
-  
-  // Здесь будет реальный запрос к БД
-  res.json({ 
-    success: true, 
-    movie: null,
-    message: `Фильм с ID ${id} не найден`
-  });
-});
-
-// Создание заказа (билета)
-app.post('/api/tickets', (req, res) => {
-  console.log('Создание заказа:', req.body);
-  
-  res.json({
-    success: true,
-    message: 'Заказ создан (тестовый режим)',
-    orderId: Date.now(),
-    total: req.body.totalPrice || 0
-  });
-});
-
-// Проверка места
-app.get('/api/tickets/check-seat', (req, res) => {
-  const { sessionId, rowNumber, seatNumber } = req.query;
-  
-  res.json({
-    success: true,
-    available: Math.random() > 0.5, // 50% шанс что место свободно
-    sessionId,
-    rowNumber,
-    seatNumber
-  });
+app.get('/api/halls', (req, res) => {
+  res.json({ success: true, halls: [] });
 });
 
 app.listen(PORT, () => {
   console.log('🎬 Cinema Backend запущен на http://localhost:' + PORT);
   console.log('📡 API: http://localhost:' + PORT + '/api');
+  console.log('🇧🇾 Валюта: BYN');
   console.log('📋 Доступные эндпоинты:');
   console.log('  - GET  /api/health');
   console.log('  - POST /api/auth/register');
   console.log('  - POST /api/auth/login');
   console.log('  - GET  /api/movies');
   console.log('  - GET  /api/sessions');
-  console.log('  - GET  /api/cinemas');
-  console.log('  - GET  /api/halls');
-  console.log('  - POST /api/tickets');
+  console.log('  - GET  /api/sessions/upcoming');
+  console.log('  - GET  /api/sessions/:id');
+  console.log('  - POST /api/orders');
+  console.log('  - GET  /api/orders/user/:userId');
 });
