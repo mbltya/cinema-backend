@@ -1,7 +1,8 @@
 package com.cinema.cinema_backend.config;
 
+import com.cinema.cinema_backend.service.CustomUserDetailsService;
 import com.cinema.cinema_backend.security.JwtAuthenticationFilter;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.cinema.cinema_backend.security.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,11 +23,22 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService userDetailsService;
+
+    public SecurityConfig(JwtUtil jwtUtil,
+                          CustomUserDetailsService userDetailsService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtUtil, userDetailsService);
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -35,98 +47,47 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+            AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http
-                // Настройка CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // Отключаем CSRF для REST API
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Разрешаем фреймы для H2 консоли
-                .headers(headers -> headers
-                        .frameOptions(frameOptions -> frameOptions.sameOrigin())
-                )
-
-                // Настраиваем управление сессиями как STATELESS
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                // Настраиваем правила авторизации (Spring Security 6+ синтаксис)
-                .authorizeHttpRequests(authz -> authz
-                        // ====== ПУБЛИЧНЫЕ ЭНДПОИНТЫ ======
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/api/users").permitAll() // Регистрация
 
-                        // ✅ ДОБАВЛЕНО: Тестовый эндпоинт профиля - публичный
-                        .requestMatchers("/api/profile/test").permitAll()
-
-                        // ✅ ДОБАВЛЕНО: Основные эндпоинты профиля - требуют аутентификации
-                        .requestMatchers("/api/profile/**").permitAll()
-
-                        // ====== GET запросы (публичные) ======
                         .requestMatchers("GET", "/api/movies/**").permitAll()
                         .requestMatchers("GET", "/api/sessions/**").permitAll()
                         .requestMatchers("GET", "/api/cinemas/**").permitAll()
                         .requestMatchers("GET", "/api/halls/**").permitAll()
 
-                        // ====== ВСЕ ДРУГИЕ ЗАПРОСЫ (требуют аутентификации) ======
-                        .requestMatchers("POST", "/api/movies/**").authenticated()
-                        .requestMatchers("PUT", "/api/movies/**").authenticated()
-                        .requestMatchers("DELETE", "/api/movies/**").authenticated()
+                        .anyRequest().authenticated()
+                );
 
-                        .requestMatchers("POST", "/api/sessions/**").authenticated()
-                        .requestMatchers("PUT", "/api/sessions/**").authenticated()
-                        .requestMatchers("DELETE", "/api/sessions/**").authenticated()
-
-                        .requestMatchers("POST", "/api/tickets/**").authenticated()
-                        .requestMatchers("PUT", "/api/tickets/**").authenticated()
-                        .requestMatchers("DELETE", "/api/tickets/**").authenticated()
-
-                        .requestMatchers("POST", "/api/cinemas/**").authenticated()
-                        .requestMatchers("PUT", "/api/cinemas/**").authenticated()
-                        .requestMatchers("DELETE", "/api/cinemas/**").authenticated()
-
-                        .requestMatchers("POST", "/api/halls/**").authenticated()
-                        .requestMatchers("PUT", "/api/halls/**").authenticated()
-                        .requestMatchers("DELETE", "/api/halls/**").authenticated()
-
-                        // ====== ПОЛЬЗОВАТЕЛИ ======
-                        .requestMatchers("GET", "/api/users/**").authenticated()
-                        .requestMatchers("PUT", "/api/users/**").authenticated()
-                        .requestMatchers("DELETE", "/api/users/**").hasRole("ADMIN")
-
-                        // ====== ВСЕ ОСТАЛЬНЫЕ ======
-                        .anyRequest().permitAll()
-                )
-
-                // Добавляем JWT фильтр
-                .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 }
