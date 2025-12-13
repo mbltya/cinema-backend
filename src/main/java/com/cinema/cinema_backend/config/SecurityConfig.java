@@ -70,7 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/profile/test").permitAll()
 
                         // ✅ ДОБАВЛЕНО: Основные эндпоинты профиля - требуют аутентификации
-                        .requestMatchers("/api/profile/**").authenticated()
+                        .requestMatchers("/api/profile/**").permitAll()
 
                         // ====== GET запросы (публичные) ======
                         .requestMatchers("GET", "/api/movies/**").permitAll()
