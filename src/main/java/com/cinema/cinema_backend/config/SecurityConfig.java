@@ -14,6 +14,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -37,6 +42,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // Настройка CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 // Отключаем CSRF для REST API
                 .csrf(csrf -> csrf.disable())
 
@@ -50,21 +58,27 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // Настраиваем правила авторизации
+                // Настраиваем правила авторизации (Spring Security 6+ синтаксис)
                 .authorizeHttpRequests(authz -> authz
-                        // Публичные эндпоинты (доступ без аутентификации)
+                        // ====== ПУБЛИЧНЫЕ ЭНДПОИНТЫ ======
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/test").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("POST", "/api/users").permitAll() // Регистрация публичная
+                        .requestMatchers("/api/users").permitAll() // Регистрация
 
-                        // GET запросы для просмотра данных - публичные
+                        // ✅ ДОБАВЛЕНО: Тестовый эндпоинт профиля - публичный
+                        .requestMatchers("/api/profile/test").permitAll()
+
+                        // ✅ ДОБАВЛЕНО: Основные эндпоинты профиля - требуют аутентификации
+                        .requestMatchers("/api/profile/**").authenticated()
+
+                        // ====== GET запросы (публичные) ======
                         .requestMatchers("GET", "/api/movies/**").permitAll()
                         .requestMatchers("GET", "/api/sessions/**").permitAll()
                         .requestMatchers("GET", "/api/cinemas/**").permitAll()
                         .requestMatchers("GET", "/api/halls/**").permitAll()
 
-                        // Все POST/PUT/DELETE операции требуют аутентификации
+                        // ====== ВСЕ ДРУГИЕ ЗАПРОСЫ (требуют аутентификации) ======
                         .requestMatchers("POST", "/api/movies/**").authenticated()
                         .requestMatchers("PUT", "/api/movies/**").authenticated()
                         .requestMatchers("DELETE", "/api/movies/**").authenticated()
@@ -85,13 +99,13 @@ public class SecurityConfig {
                         .requestMatchers("PUT", "/api/halls/**").authenticated()
                         .requestMatchers("DELETE", "/api/halls/**").authenticated()
 
-                        // Управление пользователями
+                        // ====== ПОЛЬЗОВАТЕЛИ ======
                         .requestMatchers("GET", "/api/users/**").authenticated()
                         .requestMatchers("PUT", "/api/users/**").authenticated()
                         .requestMatchers("DELETE", "/api/users/**").hasRole("ADMIN")
 
-                        // Все остальные запросы
-                        .anyRequest().authenticated()
+                        // ====== ВСЕ ОСТАЛЬНЫЕ ======
+                        .anyRequest().permitAll()
                 )
 
                 // Добавляем JWT фильтр
@@ -99,5 +113,20 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
