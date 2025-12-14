@@ -7,6 +7,7 @@ public class UserDTO {
     private String username;
     private String email;
     private Role role;
+    private Boolean isBlocked;
 
     // Конструкторы
     public UserDTO() {}
@@ -30,4 +31,7 @@ public class UserDTO {
 
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
+
+    public Boolean getIsBlocked() {return isBlocked;}
+    public void setIsBlocked(Boolean isBlocked) {this.isBlocked = isBlocked;}
 }

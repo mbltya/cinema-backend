@@ -1,6 +1,7 @@
 package com.cinema.cinema_backend.controller;
 
 import com.cinema.cinema_backend.dto.TicketDTO;
+import com.cinema.cinema_backend.security.CustomUserDetails;
 import com.cinema.cinema_backend.service.TicketService;
 import com.cinema.cinema_backend.service.dto.CreateTicketDTO;
 import jakarta.validation.Valid;
@@ -8,8 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -22,13 +25,14 @@ public class TicketController {
 
     // Получить все билеты (только ADMIN)
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public List<TicketDTO> getAllTickets() {
         return ticketService.getAllTickets();
     }
 
     // Получить билет по ID (владелец или ADMIN)
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<TicketDTO> getTicketById(@PathVariable Long id) {
         try {
             TicketDTO ticket = ticketService.getTicketById(id);
@@ -40,21 +44,22 @@ public class TicketController {
 
     // Получить билеты пользователя (владелец или ADMIN)
     @GetMapping("/user/{userId}")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
-    public List<TicketDTO> getTicketsByUser(@PathVariable Long userId) {
+    @PreAuthorize("isAuthenticated()")
+    public List<TicketDTO> getTicketsByUser(@PathVariable Long userId, Principal principal) {
+        System.out.println("Principal ID: " + ((CustomUserDetails) ((UsernamePasswordAuthenticationToken) principal).getPrincipal()).getId());
+        System.out.println("Requested user ID: " + userId);
         return ticketService.getTicketsByUser(userId);
     }
 
     // Получить активные билеты пользователя (владелец или ADMIN)
     @GetMapping("/user/{userId}/active")
-    @PreAuthorize("#userId == authentication.principal.id or hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public List<TicketDTO> getActiveTicketsByUser(@PathVariable Long userId) {
         return ticketService.getActiveTicketsByUser(userId);
     }
 
     // Получить билеты на сеанс (ADMIN или связанные пользователи)
     @GetMapping("/session/{sessionId}")
-    @PreAuthorize("hasRole('ADMIN')")
     public List<TicketDTO> getTicketsBySession(@PathVariable Long sessionId) {
         return ticketService.getTicketsBySession(sessionId);
     }

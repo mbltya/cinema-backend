@@ -2,6 +2,8 @@ package com.cinema.cinema_backend.controller;
 
 import com.cinema.cinema_backend.dto.UserDTO;
 import com.cinema.cinema_backend.entity.User;
+import com.cinema.cinema_backend.exception.ResourceNotFoundException;
+import com.cinema.cinema_backend.repository.UserRepository;
 import com.cinema.cinema_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -92,6 +94,41 @@ public class UserController {
                 .map(user -> ResponseEntity.ok(convertToDTO(user)))
                 .orElse(ResponseEntity.notFound().build());
     }
+    @PutMapping("/{id}/block")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> blockUser(@PathVariable Long id) {
+        try {
+            // Используем UserService вместо прямого доступа к репозиторию
+            User user = userService.getUserById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+            user.setIsBlocked(true);
+            User updatedUser = userService.updateUser(id, user); // Используем существующий метод updateUser
+            return ResponseEntity.ok(convertToDTO(updatedUser));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // Разблокировать пользователя
+    @PutMapping("/{id}/unblock")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDTO> unblockUser(@PathVariable Long id) {
+        try {
+            User user = userService.getUserById(id)
+                    .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+            user.setIsBlocked(false);
+            User updatedUser = userService.updateUser(id, user); // Используем существующий метод updateUser
+            return ResponseEntity.ok(convertToDTO(updatedUser));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
     // Вспомогательный метод для преобразования в DTO
     private UserDTO convertToDTO(User user) {
@@ -104,6 +141,7 @@ public class UserController {
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
+        dto.setIsBlocked(user.getIsBlocked());
 
         return dto;
     }

@@ -47,6 +47,11 @@ public class TicketService {
     // Создать билет (бронирование)
     @Transactional
     public TicketDTO createTicket(CreateTicketDTO dto) {
+        System.out.println("\n=== CREATING TICKET ===");
+        System.out.println("User ID: " + dto.getUserId());
+        System.out.println("Session ID: " + dto.getSessionId());
+        System.out.println("Row: " + dto.getRowNumber() + ", Seat: " + dto.getSeatNumber());
+
         // Проверка пользователя
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", dto.getUserId()));
@@ -55,22 +60,23 @@ public class TicketService {
         Session session = sessionRepository.findById(dto.getSessionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Session", dto.getSessionId()));
 
+        System.out.println("Session exists: " + (session != null));
+        System.out.println("Session time: " + session.getStartTime());
+
         // Проверка, что сеанс еще не прошел
         if (session.getStartTime().isBefore(LocalDateTime.now())) {
+            System.out.println("ERROR: Session already started");
             throw new IllegalArgumentException("Cannot book ticket for past session");
         }
 
-        // Проверка возраста пользователя для возрастного ограничения
-        if (session.getMovie().getAgeRating() != null && session.getMovie().getAgeRating() > 16) {
-            // Здесь можно добавить логику проверки возраста пользователя
-            // Например, если у пользователя есть поле даты рождения
-        }
-
         // Проверка доступности места
+        System.out.println("Checking seat availability...");
         validateSeatAvailability(session.getId(), dto.getRowNumber(), dto.getSeatNumber());
 
         // Проверка, что место существует в зале
         Hall hall = session.getHall();
+        System.out.println("Hall rows: " + hall.getRows() + ", seats per row: " + hall.getSeatsPerRow());
+
         if (dto.getRowNumber() > hall.getRows() || dto.getRowNumber() <= 0) {
             throw new IllegalArgumentException("Invalid row number. Hall has " + hall.getRows() + " rows");
         }
@@ -314,8 +320,18 @@ public class TicketService {
 
     // Вспомогательные методы
     private void validateSeatAvailability(Long sessionId, Integer rowNumber, Integer seatNumber) {
+        System.out.println("Validating seat: session=" + sessionId +
+                ", row=" + rowNumber + ", seat=" + seatNumber);
+
         boolean seatTaken = ticketRepository.isSeatTaken(sessionId, rowNumber, seatNumber);
+        System.out.println("Seat taken: " + seatTaken);
+
         if (seatTaken) {
+            List<Ticket> existingTickets = ticketRepository.findBySessionId(sessionId);
+            existingTickets.stream()
+                    .filter(t -> t.getRowNumber().equals(rowNumber) && t.getSeatNumber().equals(seatNumber))
+                    .forEach(t -> System.out.println("Existing ticket: " + t.getId() + " status: " + t.getStatus()));
+
             throw new IllegalArgumentException("Seat row " + rowNumber + ", seat " + seatNumber + " is already taken");
         }
     }

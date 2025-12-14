@@ -27,6 +27,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    private Boolean isBlocked = false;
+
     public User() {}
 
     public User(String username, String email, String password, Role role) {
@@ -50,4 +52,8 @@ public class User {
 
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
+
+    public Boolean getIsBlocked() {return isBlocked;}
+
+    public void setIsBlocked(Boolean isBlocked) {this.isBlocked = isBlocked;}
 }

@@ -67,6 +67,11 @@ public class SecurityConfig {
                         .requestMatchers("GET", "/api/sessions/**").permitAll()
                         .requestMatchers("GET", "/api/cinemas/**").permitAll()
                         .requestMatchers("GET", "/api/halls/**").permitAll()
+                        .requestMatchers("GET", "/api/tickets/check-seat").permitAll()
+
+                        .requestMatchers("GET", "/api/tickets/user/**").authenticated()
+                        .requestMatchers("GET", "/api/tickets/session/**").authenticated()
+                        .requestMatchers("POST", "/api/tickets").authenticated()
 
                         .anyRequest().authenticated()
                 );

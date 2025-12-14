@@ -62,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtUtil.validateToken(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
-                                    userDetails,
+                                    userDetails, // передаём CustomUserDetails с id
                                     null,
                                     userDetails.getAuthorities()
                             );
@@ -70,7 +70,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                    System.out.println("Authentication set");
+                    // Добавь логи для отладки
+                    System.out.println("Authentication set for user ID: " +
+                            ((CustomUserDetails) userDetails).getId());
                 } else {
                     System.out.println("Token invalid");
                 }
