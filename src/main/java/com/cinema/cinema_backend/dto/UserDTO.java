@@ -9,9 +9,6 @@ public class UserDTO {
     private Role role;
     private Boolean isBlocked;
 
-    // Конструкторы
-    public UserDTO() {}
-
     public UserDTO(Long id, String username, String email, Role role) {
         this.id = id;
         this.username = username;
@@ -19,7 +16,8 @@ public class UserDTO {
         this.role = role;
     }
 
-    // Геттеры и сеттеры
+    public UserDTO() {}
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

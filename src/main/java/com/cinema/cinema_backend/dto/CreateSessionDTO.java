@@ -25,7 +25,6 @@ public class CreateSessionDTO {
 
     private String format;
 
-    // Геттеры и сеттеры
     public Long getMovieId() { return movieId; }
     public void setMovieId(Long movieId) { this.movieId = movieId; }
 

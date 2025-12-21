@@ -17,9 +17,6 @@ public class TicketDTO {
     private TicketStatus status;
     private String qrCode;
 
-    // Constructors
-    public TicketDTO() {}
-
     public TicketDTO(Long id, Long userId, String userName, Long sessionId,
                      String movieTitle, LocalDateTime sessionTime,
                      Integer rowNumber, Integer seatNumber, Double price,
@@ -38,7 +35,6 @@ public class TicketDTO {
         this.qrCode = qrCode;
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

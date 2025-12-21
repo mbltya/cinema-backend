@@ -23,14 +23,12 @@ public class TicketController {
     @Autowired
     private TicketService ticketService;
 
-    // Получить все билеты (только ADMIN)
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public List<TicketDTO> getAllTickets() {
         return ticketService.getAllTickets();
     }
 
-    // Получить билет по ID (владелец или ADMIN)
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<TicketDTO> getTicketById(@PathVariable Long id) {
@@ -42,7 +40,6 @@ public class TicketController {
         }
     }
 
-    // Получить билеты пользователя (владелец или ADMIN)
     @GetMapping("/user/{userId}")
     @PreAuthorize("isAuthenticated()")
     public List<TicketDTO> getTicketsByUser(@PathVariable Long userId, Principal principal) {
@@ -51,20 +48,17 @@ public class TicketController {
         return ticketService.getTicketsByUser(userId);
     }
 
-    // Получить активные билеты пользователя (владелец или ADMIN)
     @GetMapping("/user/{userId}/active")
     @PreAuthorize("isAuthenticated()")
     public List<TicketDTO> getActiveTicketsByUser(@PathVariable Long userId) {
         return ticketService.getActiveTicketsByUser(userId);
     }
 
-    // Получить билеты на сеанс (ADMIN или связанные пользователи)
     @GetMapping("/session/{sessionId}")
     public List<TicketDTO> getTicketsBySession(@PathVariable Long sessionId) {
         return ticketService.getTicketsBySession(sessionId);
     }
 
-    // Проверить доступность места (публичный)
     @GetMapping("/check-seat")
     public ResponseEntity<Boolean> checkSeatAvailability(
             @RequestParam Long sessionId,
@@ -74,7 +68,6 @@ public class TicketController {
         return ResponseEntity.ok(isAvailable);
     }
 
-    // Создать билет (аутентифицированный пользователь)
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> createTicket(@Valid @RequestBody CreateTicketDTO dto) {
@@ -88,7 +81,6 @@ public class TicketController {
         }
     }
 
-    // Подтвердить оплату билета (владелец или ADMIN)
     @PutMapping("/{id}/confirm")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> confirmTicket(@PathVariable Long id) {
@@ -100,7 +92,6 @@ public class TicketController {
         }
     }
 
-    // Отменить билет (владелец или ADMIN)
     @PutMapping("/{id}/cancel")
     public ResponseEntity<?> cancelTicket(@PathVariable Long id) {
         try {
@@ -111,9 +102,8 @@ public class TicketController {
         }
     }
 
-    // Удалить билет (ADMIN)
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @ticketService.isTicketOwner(#id, principal.id)")
     public ResponseEntity<Void> deleteTicket(@PathVariable Long id) {
         try {
             ticketService.deleteTicket(id);

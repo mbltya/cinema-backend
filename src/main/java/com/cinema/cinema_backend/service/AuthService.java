@@ -46,7 +46,6 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // ✅ Генерируем токен по email
         String token = jwtUtil.generateToken(savedUser.getEmail());
 
         return new AuthResponseDTO(token, savedUser.getEmail(), savedUser.getRole().name());
@@ -61,7 +60,6 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ✅ Генерируем токен по email
         String token = jwtUtil.generateToken(user.getEmail());
 
         return new AuthResponseDTO(token, user.getEmail(), user.getRole().name());

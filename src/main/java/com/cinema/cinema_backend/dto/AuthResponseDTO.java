@@ -11,7 +11,6 @@ public class AuthResponseDTO {
         this.role = role;
     }
 
-    // Геттеры
     public String getToken() { return token; }
     public String getEmail() { return email; }
     public String getRole() { return role; }

@@ -9,7 +9,6 @@ public class CinemaWithHallsDTO {
     private String address;
     private List<HallDTO> halls;
 
-    // Конструкторы, геттеры и сеттеры
     public CinemaWithHallsDTO() {}
 
     public CinemaWithHallsDTO(Long id, String name, String city, String address, List<HallDTO> halls) {
@@ -20,7 +19,6 @@ public class CinemaWithHallsDTO {
         this.halls = halls;
     }
 
-    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

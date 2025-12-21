@@ -8,31 +8,13 @@ public class SessionDTO {
     private String movieTitle;
     private Long hallId;
     private String hallName;
-    private Long cinemaId;        // добавим для удобства
-    private String cinemaName;    // добавим для удобства
+    private Long cinemaId;
+    private String cinemaName;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Double price;
     private String format;
 
-    // Конструкторы
-    public SessionDTO() {}
-
-    public SessionDTO(Long id, Long movieId, String movieTitle, Long hallId,
-                      String hallName, LocalDateTime startTime, LocalDateTime endTime,
-                      Double price, String format) {
-        this.id = id;
-        this.movieId = movieId;
-        this.movieTitle = movieTitle;
-        this.hallId = hallId;
-        this.hallName = hallName;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.price = price;
-        this.format = format;
-    }
-
-    // Расширенный конструктор с кинотеатром
     public SessionDTO(Long id, Long movieId, String movieTitle, Long hallId,
                       String hallName, Long cinemaId, String cinemaName,
                       LocalDateTime startTime, LocalDateTime endTime,
@@ -50,7 +32,6 @@ public class SessionDTO {
         this.format = format;
     }
 
-    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

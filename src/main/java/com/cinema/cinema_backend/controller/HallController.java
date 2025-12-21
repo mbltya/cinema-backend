@@ -18,7 +18,6 @@ public class HallController {
     @Autowired
     private HallService hallService;
 
-    // Получить все залы (публичный)
     @GetMapping
     public List<HallDTO> getAllHalls() {
         return hallService.getAllHalls().stream()
@@ -26,7 +25,6 @@ public class HallController {
                 .collect(Collectors.toList());
     }
 
-    // Получить зал по ID (публичный)
     @GetMapping("/{id}")
     public ResponseEntity<HallDTO> getHallById(@PathVariable Long id) {
         return hallService.getHallById(id)
@@ -34,7 +32,6 @@ public class HallController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Получить залы по кинотеатру (публичный)
     @GetMapping("/cinema/{cinemaId}")
     public List<HallDTO> getHallsByCinema(@PathVariable Long cinemaId) {
         return hallService.getHallsByCinemaId(cinemaId).stream()
@@ -42,7 +39,6 @@ public class HallController {
                 .collect(Collectors.toList());
     }
 
-    // Создать зал (только ADMIN)
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<HallDTO> createHall(@RequestBody Hall hall) {
@@ -54,7 +50,6 @@ public class HallController {
         }
     }
 
-    // Обновить зал (только ADMIN)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<HallDTO> updateHall(@PathVariable Long id, @RequestBody Hall hall) {
@@ -66,7 +61,6 @@ public class HallController {
         }
     }
 
-    // Удалить зал (только ADMIN)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteHall(@PathVariable Long id) {
@@ -78,7 +72,6 @@ public class HallController {
         }
     }
 
-    // Вспомогательный метод для преобразования в DTO
     private HallDTO convertToDTO(Hall hall) {
         if (hall == null) {
             return null;

@@ -1,7 +1,7 @@
 package com.cinema.cinema_backend.controller;
 
 import com.cinema.cinema_backend.entity.User;
-import com.cinema.cinema_backend.entity.Role; // Импортируем enum
+import com.cinema.cinema_backend.entity.Role;
 import com.cinema.cinema_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +24,6 @@ public class ProfileController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // Проверка аутентификации
             if (authentication == null || !authentication.isAuthenticated()) {
                 response.put("error", "Not authenticated");
                 return ResponseEntity.status(401).body(response);
@@ -38,17 +37,15 @@ public class ProfileController {
                 return ResponseEntity.status(404).body(response);
             }
 
-            // Заполняем данные профиля
             response.put("id", user.getId());
             response.put("username", user.getUsername());
             response.put("email", user.getEmail());
 
-            // Преобразуем Enum Role в String
             Role role = user.getRole();
             if (role != null) {
-                response.put("role", role.name()); // "USER" или "ADMIN"
+                response.put("role", role.name());
             } else {
-                response.put("role", "USER"); // Значение по умолчанию
+                response.put("role", "USER");
             }
 
             return ResponseEntity.ok(response);
@@ -59,7 +56,6 @@ public class ProfileController {
         }
     }
 
-    // Простой тестовый эндпоинт
     @GetMapping("/test")
     public ResponseEntity<Map<String, String>> test() {
         Map<String, String> response = new HashMap<>();

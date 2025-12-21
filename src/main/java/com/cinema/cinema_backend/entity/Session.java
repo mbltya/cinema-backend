@@ -33,7 +33,7 @@ public class Session {
     @NotNull
     private Double price;
 
-    private String format; // 2D, 3D, IMAX
+    private String format;
 
     @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
@@ -46,7 +46,6 @@ public class Session {
         }
     }
 
-    // Constructors
     public Session() {}
 
     public Session(Movie movie, Hall hall, LocalDateTime startTime, Double price, String format) {
@@ -58,7 +57,6 @@ public class Session {
         calculateEndTime();
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

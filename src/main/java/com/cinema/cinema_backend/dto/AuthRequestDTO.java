@@ -12,7 +12,6 @@ public class AuthRequestDTO {
     @NotBlank(message = "Password is required")
     private String password;
 
-    // Геттеры и сеттеры
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 

@@ -46,23 +46,18 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) throws Exception {
         System.out.println("=== Запуск DataSeeder для PostgreSQL ===");
 
-        // 1. Создаем тестовых пользователей
         createUsers();
 
-        // 2. Создаем тестовые фильмы
         createMovies();
 
-        // 3. Создаем кинотеатры и залы
         createCinemasAndHalls();
 
-        // 4. Создаем сеансы
         createSessions();
 
         System.out.println("=== DataSeeder завершен ===");
     }
 
     private void createUsers() {
-        // Администратор
         if (!userRepository.existsByEmail("admin@cinema.com")) {
             User admin = new User();
             admin.setUsername("admin");
@@ -75,7 +70,6 @@ public class DataSeeder implements CommandLineRunner {
             System.out.println("Администратор уже существует");
         }
 
-        // Пользователь
         if (!userRepository.existsByEmail("user@cinema.com")) {
             User user = new User();
             user.setUsername("user");
@@ -96,7 +90,6 @@ public class DataSeeder implements CommandLineRunner {
         if (movieRepository.count() == 0) {
             System.out.println("Создание тестовых фильмов...");
 
-            // Фильм 1: Интерстеллар
             Movie movie1 = new Movie();
             movie1.setTitle("Интерстеллар");
             movie1.setGenre("Фантастика, Драма, Приключения");
@@ -107,7 +100,6 @@ public class DataSeeder implements CommandLineRunner {
             movie1.setAgeRating(12);
             movieRepository.save(movie1);
 
-            // Фильм 2: Начало
             Movie movie2 = new Movie();
             movie2.setTitle("Начало");
             movie2.setGenre("Фантастика, Триллер, Боевик");
@@ -118,7 +110,6 @@ public class DataSeeder implements CommandLineRunner {
             movie2.setAgeRating(12);
             movieRepository.save(movie2);
 
-            // Фильм 3: Зеленая миля
             Movie movie3 = new Movie();
             movie3.setTitle("Зеленая миля");
             movie3.setGenre("Драма, Фэнтези, Криминал");
@@ -129,7 +120,6 @@ public class DataSeeder implements CommandLineRunner {
             movie3.setAgeRating(16);
             movieRepository.save(movie3);
 
-            // Фильм 4: Побег из Шоушенка
             Movie movie4 = new Movie();
             movie4.setTitle("Побег из Шоушенка");
             movie4.setGenre("Драма");
@@ -140,7 +130,6 @@ public class DataSeeder implements CommandLineRunner {
             movie4.setAgeRating(16);
             movieRepository.save(movie4);
 
-            // Фильм 5: Форрест Гамп
             Movie movie5 = new Movie();
             movie5.setTitle("Форрест Гамп");
             movie5.setGenre("Драма, Мелодрама, Комедия");
@@ -161,14 +150,12 @@ public class DataSeeder implements CommandLineRunner {
         if (cinemaRepository.count() == 0) {
             System.out.println("Создание кинотеатров и залов...");
 
-            // Кинотеатр 1
             Cinema cinema1 = new Cinema();
             cinema1.setName("Кинотеатр 'Октябрь'");
             cinema1.setCity("Минск");
             cinema1.setAddress("пр. Независимости, 73");
             cinemaRepository.save(cinema1);
 
-            // Залы для кинотеатра 1
             Hall hall1 = new Hall();
             hall1.setName("Зал 1 (Большой)");
             hall1.setRows(15);
@@ -183,14 +170,12 @@ public class DataSeeder implements CommandLineRunner {
             hall2.setCinema(cinema1);
             hallRepository.save(hall2);
 
-            // Кинотеатр 2
             Cinema cinema2 = new Cinema();
             cinema2.setName("Кинотеатр 'Москва'");
             cinema2.setCity("Минск");
             cinema2.setAddress("пр. Победителей, 13");
             cinemaRepository.save(cinema2);
 
-            // Залы для кинотеатра 2
             Hall hall3 = new Hall();
             hall3.setName("IMAX зал");
             hall3.setRows(12);
@@ -215,7 +200,6 @@ public class DataSeeder implements CommandLineRunner {
         if (sessionRepository.count() == 0) {
             System.out.println("Создание тестовых сеансов...");
 
-            // Получаем фильмы
             Movie interstellar = movieRepository.findByTitleContainingIgnoreCase("Интерстеллар")
                     .stream().findFirst().orElse(null);
             Movie inception = movieRepository.findByTitleContainingIgnoreCase("Начало")
@@ -223,7 +207,6 @@ public class DataSeeder implements CommandLineRunner {
             Movie greenMile = movieRepository.findByTitleContainingIgnoreCase("Зеленая миля")
                     .stream().findFirst().orElse(null);
 
-            // Получаем залы
             Hall hall1 = hallRepository.findAll().stream()
                     .filter(h -> h.getName().contains("Зал 1"))
                     .findFirst().orElse(null);
@@ -235,7 +218,6 @@ public class DataSeeder implements CommandLineRunner {
                     .findFirst().orElse(null);
 
             if (interstellar != null && hall1 != null) {
-                // Сеансы на сегодня
                 Session session1 = new Session();
                 session1.setMovie(interstellar);
                 session1.setHall(hall1);

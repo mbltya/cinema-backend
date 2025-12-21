@@ -19,7 +19,6 @@ public class CinemaController {
     @Autowired
     private CinemaService cinemaService;
 
-    // Получить все кинотеатры (публичный)
     @GetMapping
     public List<CinemaWithHallsDTO> getAllCinemas() {
         return cinemaService.getAllCinemas().stream()
@@ -27,7 +26,6 @@ public class CinemaController {
                 .collect(Collectors.toList());
     }
 
-    // Получить кинотеатр по ID (публичный)
     @GetMapping("/{id}")
     public ResponseEntity<CinemaWithHallsDTO> getCinemaById(@PathVariable Long id) {
         return cinemaService.getCinemaById(id)
@@ -35,7 +33,6 @@ public class CinemaController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Получить кинотеатры по городу (публичный)
     @GetMapping("/city/{city}")
     public List<CinemaWithHallsDTO> getCinemasByCity(@PathVariable String city) {
         return cinemaService.getCinemasByCity(city).stream()
@@ -43,7 +40,6 @@ public class CinemaController {
                 .collect(Collectors.toList());
     }
 
-    // Создать кинотеатр (только ADMIN)
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CinemaWithHallsDTO> createCinema(@RequestBody Cinema cinema) {
@@ -55,7 +51,6 @@ public class CinemaController {
         }
     }
 
-    // Обновить кинотеатр (только ADMIN)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CinemaWithHallsDTO> updateCinema(@PathVariable Long id, @RequestBody Cinema cinema) {
@@ -67,7 +62,6 @@ public class CinemaController {
         }
     }
 
-    // Удалить кинотеатр (только ADMIN)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCinema(@PathVariable Long id) {
@@ -79,7 +73,6 @@ public class CinemaController {
         }
     }
 
-    // Вспомогательный метод для преобразования в DTO
     private CinemaWithHallsDTO convertToDTO(Cinema cinema) {
         if (cinema == null) {
             return null;

@@ -21,13 +21,11 @@ public class SessionController {
     @Autowired
     private SessionService sessionService;
 
-    // Получить все сеансы (публичный)
     @GetMapping
     public List<SessionDTO> getAllSessions() {
         return sessionService.getAllSessions();
     }
 
-    // Получить сеанс по ID (публичный)
     @GetMapping("/{id}")
     public ResponseEntity<SessionDTO> getSessionById(@PathVariable Long id) {
         try {
@@ -38,38 +36,32 @@ public class SessionController {
         }
     }
 
-    // Получить сеансы по фильму (публичный)
     @GetMapping("/movie/{movieId}")
     public List<SessionDTO> getSessionsByMovie(@PathVariable Long movieId) {
         return sessionService.getSessionsByMovie(movieId);
     }
 
-    // Получить сеансы по залу (публичный)
     @GetMapping("/hall/{hallId}")
     public List<SessionDTO> getSessionsByHall(@PathVariable Long hallId) {
         return sessionService.getSessionsByHall(hallId);
     }
 
-    // Получить предстоящие сеансы (публичный)
     @GetMapping("/upcoming")
     public List<SessionDTO> getUpcomingSessions() {
         return sessionService.getUpcomingSessions();
     }
 
-    // Получить сеансы по кинотеатру (публичный)
     @GetMapping("/cinema/{cinemaId}")
     public List<SessionDTO> getSessionsByCinema(@PathVariable Long cinemaId) {
         return sessionService.getSessionsByCinema(cinemaId);
     }
 
-    // Получить сеансы на дату (публичный)
     @GetMapping("/date/{date}")
     public List<SessionDTO> getSessionsByDate(
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return sessionService.getSessionsByDate(date);
     }
 
-    // Получить доступные места на сеансе (публичный)
     @GetMapping("/{id}/available-seats")
     public ResponseEntity<Integer> getAvailableSeats(@PathVariable Long id) {
         try {
@@ -80,7 +72,6 @@ public class SessionController {
         }
     }
 
-    // Создать новый сеанс (только ADMIN)
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createSession(@Valid @RequestBody CreateSessionDTO dto) {
@@ -94,7 +85,6 @@ public class SessionController {
         }
     }
 
-    // Обновить сеанс (только ADMIN)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateSession(@PathVariable Long id,
@@ -107,7 +97,6 @@ public class SessionController {
         }
     }
 
-    // Удалить сеанс (только ADMIN)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteSession(@PathVariable Long id) {

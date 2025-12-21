@@ -6,19 +6,16 @@ import java.time.LocalDateTime;
 
 public class UpdateSessionDTO {
 
-    private Long movieId; // опционально при обновлении
-    private Long hallId; // опционально при обновлении
+    private Long movieId;
+    private Long hallId;
 
     @Future(message = "Start time must be in the future")
-    private LocalDateTime startTime; // опционально при обновлении
+    private LocalDateTime startTime;
 
     @Positive(message = "Price must be positive")
-    private Double price; // опционально при обновлении
+    private Double price;
 
-    private String format; // опционально при обновлении
-
-    // Конструкторы
-    public UpdateSessionDTO() {}
+    private String format;
 
     public UpdateSessionDTO(Long movieId, Long hallId, LocalDateTime startTime,
                             Double price, String format) {
@@ -29,7 +26,6 @@ public class UpdateSessionDTO {
         this.format = format;
     }
 
-    // Геттеры и сеттеры
     public Long getMovieId() { return movieId; }
     public void setMovieId(Long movieId) { this.movieId = movieId; }
 

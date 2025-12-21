@@ -85,9 +85,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Разрешаем фронтенд (React на 3000 порту)
         config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",      // React dev server
+                "http://localhost:3000",
                 "http://127.0.0.1:3000"
         ));
 
@@ -104,7 +103,7 @@ public class SecurityConfig {
         ));
 
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L); // Кэшируем на 1 час
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

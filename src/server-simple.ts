@@ -1,4 +1,3 @@
-// src/server-simple.ts - без базы данных
 import express from 'express';
 import cors from 'cors';
 
@@ -43,7 +42,6 @@ app.listen(PORT, () => {
   console.log(`🩺 Проверка: http://localhost:${PORT}/api/health`);
 });
 
-// Не даем процессу завершиться
 process.on('SIGINT', () => {
   console.log('Завершение работы...');
   process.exit(0);

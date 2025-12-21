@@ -20,7 +20,6 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    // Получить всех пользователей (только ADMIN)
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public List<UserDTO> getAllUsers() {
@@ -29,7 +28,6 @@ public class UserController {
                 .collect(Collectors.toList());
     }
 
-    // Получить пользователя по ID (ADMIN или сам пользователь)
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
@@ -38,7 +36,6 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Создать пользователя (публичный - для регистрации)
     @PostMapping
     public ResponseEntity<UserDTO> createUser(@RequestBody User user) {
         try {
@@ -49,7 +46,6 @@ public class UserController {
         }
     }
 
-    // Обновить пользователя (ADMIN или сам пользователь)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody User user) {
@@ -57,15 +53,12 @@ public class UserController {
             User updatedUser = userService.updateUser(id, user);
             return ResponseEntity.ok(convertToDTO(updatedUser));
         } catch (IllegalArgumentException e) {
-            // Обработка бизнес-логических ошибок (неуникальный email и т.д.)
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
-            // Обработка всех остальных Runtime исключений (ResourceNotFoundException и т.д.)
             return ResponseEntity.notFound().build();
         }
     }
 
-    // Удалить пользователя (только ADMIN)
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
@@ -77,7 +70,6 @@ public class UserController {
         }
     }
 
-    // Найти пользователя по email (ADMIN)
     @GetMapping("/email/{email}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> getUserByEmail(@PathVariable String email) {
@@ -86,7 +78,6 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Найти пользователя по username (ADMIN)
     @GetMapping("/username/{username}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
@@ -98,12 +89,11 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> blockUser(@PathVariable Long id) {
         try {
-            // Используем UserService вместо прямого доступа к репозиторию
             User user = userService.getUserById(id)
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
             user.setIsBlocked(true);
-            User updatedUser = userService.updateUser(id, user); // Используем существующий метод updateUser
+            User updatedUser = userService.updateUser(id, user);
             return ResponseEntity.ok(convertToDTO(updatedUser));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -112,7 +102,6 @@ public class UserController {
         }
     }
 
-    // Разблокировать пользователя
     @PutMapping("/{id}/unblock")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> unblockUser(@PathVariable Long id) {
@@ -121,7 +110,7 @@ public class UserController {
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
             user.setIsBlocked(false);
-            User updatedUser = userService.updateUser(id, user); // Используем существующий метод updateUser
+            User updatedUser = userService.updateUser(id, user);
             return ResponseEntity.ok(convertToDTO(updatedUser));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -130,7 +119,6 @@ public class UserController {
         }
     }
 
-    // Вспомогательный метод для преобразования в DTO
     private UserDTO convertToDTO(User user) {
         if (user == null) {
             return null;

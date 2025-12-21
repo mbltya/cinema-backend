@@ -33,15 +33,12 @@ public class UserService {
 
     @Transactional
     public User createUser(User user) {
-        // Проверка уникальности email
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        // Шифрование пароля
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Установка роли по умолчанию
         if (user.getRole() == null) {
             user.setRole(Role.USER);
         }
@@ -58,7 +55,6 @@ public class UserService {
             user.setUsername(userDetails.getUsername());
         }
         if (userDetails.getEmail() != null && !userDetails.getEmail().equals(user.getEmail())) {
-            // Проверка уникальности нового email
             if (userRepository.existsByEmail(userDetails.getEmail())) {
                 throw new IllegalArgumentException("Email already exists");
             }

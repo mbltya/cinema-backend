@@ -9,7 +9,6 @@ public class HallDTO {
     private String cinemaName;
     private Integer totalSeats;
 
-    // Конструкторы
     public HallDTO() {}
 
     public HallDTO(Long id, String name, Integer rows, Integer seatsPerRow,
@@ -23,7 +22,6 @@ public class HallDTO {
         this.totalSeats = rows * seatsPerRow;
     }
 
-    // Геттеры и сеттеры
     public Long getId() {
         return id;
     }

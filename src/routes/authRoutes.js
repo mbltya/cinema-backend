@@ -1,11 +1,9 @@
-// cinema-backend/src/routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Middleware для проверки токена
 const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -22,12 +20,10 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-// Регистрация
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Проверяем, существует ли пользователь
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
       return res.status(400).json({
@@ -35,10 +31,8 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // Хэшируем пароль
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Создаем пользователя
     const user = new User({
       username,
       email,
@@ -48,7 +42,6 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    // Создаем JWT токен
     const token = jwt.sign(
       { id: user._id, role: user.role },
       'your-secret-key',
@@ -70,24 +63,20 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Вход
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Ищем пользователя
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ error: 'Неверный email или пароль' });
     }
 
-    // Проверяем пароль
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Неверный email или пароль' });
     }
 
-    // Создаем JWT токен
     const token = jwt.sign(
       { id: user._id, role: user.role },
       'your-secret-key',
@@ -109,7 +98,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Получить профиль пользователя
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
@@ -123,7 +111,6 @@ router.get('/profile', authMiddleware, async (req, res) => {
   }
 });
 
-// Обновить профиль пользователя
 router.put('/profile', authMiddleware, async (req, res) => {
   try {
     const { username, email } = req.body;
@@ -133,7 +120,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Пользователь не найден' });
     }
 
-    // Проверяем уникальность email
     if (email && email !== user.email) {
       const existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -142,7 +128,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
       user.email = email;
     }
 
-    // Проверяем уникальность username
     if (username && username !== user.username) {
       const existingUser = await User.findOne({ username });
       if (existingUser) {
@@ -153,7 +138,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
 
     await user.save();
 
-    // Возвращаем обновленные данные
     const userResponse = {
       id: user._id,
       username: user.username,
@@ -168,7 +152,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
   }
 });
 
-// Проверка токена
 router.get('/verify', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');

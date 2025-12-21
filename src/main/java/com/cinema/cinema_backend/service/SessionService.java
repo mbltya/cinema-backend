@@ -31,7 +31,6 @@ public class SessionService {
     @Autowired
     private HallRepository hallRepository;
 
-    // Получить все сеансы
     @Transactional(readOnly = true)
     public List<SessionDTO> getAllSessions() {
         return sessionRepository.findAll().stream()
@@ -39,7 +38,6 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    // Получить сеанс по ID
     @Transactional(readOnly = true)
     public SessionDTO getSessionById(Long id) {
         Session session = sessionRepository.findById(id)
@@ -47,26 +45,20 @@ public class SessionService {
         return convertToDTO(session);
     }
 
-    // Создать новый сеанс
     @Transactional
     public SessionDTO createSession(CreateSessionDTO dto) {
-        // Проверка существования фильма
         Movie movie = movieRepository.findById(dto.getMovieId())
                 .orElseThrow(() -> new ResourceNotFoundException("Movie", dto.getMovieId()));
 
-        // Проверка существования зала
         Hall hall = hallRepository.findById(dto.getHallId())
                 .orElseThrow(() -> new ResourceNotFoundException("Hall", dto.getHallId()));
 
-        // Проверка, что время начала в будущем
         if (dto.getStartTime().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Session start time must be in the future");
         }
 
-        // Проверка возраста фильма и доступности формата
         validateSessionCreation(movie, hall, dto);
 
-        // Создание сущности сеанса
         Session session = new Session();
         session.setMovie(movie);
         session.setHall(hall);
@@ -74,21 +66,17 @@ public class SessionService {
         session.setPrice(dto.getPrice());
         session.setFormat(dto.getFormat() != null ? dto.getFormat() : "2D");
 
-        // Проверка конфликтов расписания
         checkForScheduleConflicts(session);
 
-        // Сохранение
         Session savedSession = sessionRepository.save(session);
         return convertToDTO(savedSession);
     }
 
-    // Обновить сеанс
     @Transactional
     public SessionDTO updateSession(Long id, UpdateSessionDTO dto) {
         Session session = sessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Session", id));
 
-        // Обновляем только переданные поля
         if (dto.getMovieId() != null) {
             Movie movie = movieRepository.findById(dto.getMovieId())
                     .orElseThrow(() -> new ResourceNotFoundException("Movie", dto.getMovieId()));
@@ -116,7 +104,6 @@ public class SessionService {
             session.setFormat(dto.getFormat());
         }
 
-        // Проверка конфликтов при изменении времени или зала
         if (dto.getStartTime() != null || dto.getHallId() != null) {
             checkForScheduleConflicts(session);
         }
@@ -125,14 +112,12 @@ public class SessionService {
         return convertToDTO(updatedSession);
     }
 
-    // Удалить сеанс
     @Transactional
     public void deleteSession(Long id) {
         if (!sessionRepository.existsById(id)) {
             throw new ResourceNotFoundException("Session", id);
         }
 
-        // Проверяем, есть ли купленные билеты на этот сеанс
         Session session = sessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Session", id));
 
@@ -143,7 +128,6 @@ public class SessionService {
         sessionRepository.deleteById(id);
     }
 
-    // Получить сеансы по фильму
     @Transactional(readOnly = true)
     public List<SessionDTO> getSessionsByMovie(Long movieId) {
         return sessionRepository.findByMovieId(movieId).stream()
@@ -151,7 +135,6 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    // Получить сеансы по залу
     @Transactional(readOnly = true)
     public List<SessionDTO> getSessionsByHall(Long hallId) {
         return sessionRepository.findByHallId(hallId).stream()
@@ -159,7 +142,6 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    // Получить сеансы по кинотеатру
     @Transactional(readOnly = true)
     public List<SessionDTO> getSessionsByCinema(Long cinemaId) {
         return sessionRepository.findByCinemaId(cinemaId).stream()
@@ -167,7 +149,6 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    // Получить предстоящие сеансы
     @Transactional(readOnly = true)
     public List<SessionDTO> getUpcomingSessions() {
         return sessionRepository.findUpcomingSessions(LocalDateTime.now()).stream()
@@ -175,7 +156,6 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    // Получить сеансы на определенную дату
     @Transactional(readOnly = true)
     public List<SessionDTO> getSessionsByDate(LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
@@ -186,7 +166,6 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    // Получить сеансы по фильму и дате
     @Transactional(readOnly = true)
     public List<SessionDTO> getSessionsByMovieAndDate(Long movieId, LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
@@ -200,7 +179,6 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    // Проверить доступность мест на сеансе
     @Transactional(readOnly = true)
     public int getAvailableSeats(Long sessionId) {
         Session session = sessionRepository.findById(sessionId)
@@ -216,14 +194,10 @@ public class SessionService {
         return totalSeats - bookedSeats;
     }
 
-    // Вспомогательные методы
     private void validateSessionCreation(Movie movie, Hall hall, CreateSessionDTO dto) {
-        // Проверка возраста фильма (можно добавить логику)
         if (movie.getAgeRating() != null && movie.getAgeRating() > 18) {
-            // Логика для возрастных ограничений
         }
 
-        // Проверка формата (например, IMAX только в специальных залах)
         if ("IMAX".equals(dto.getFormat()) && !hall.getName().contains("IMAX")) {
             throw new IllegalArgumentException("IMAX format is only available in IMAX halls");
         }
@@ -236,7 +210,6 @@ public class SessionService {
                 session.getEndTime()
         );
 
-        // Исключаем текущий сеанс при обновлении
         conflicts = conflicts.stream()
                 .filter(c -> !c.getId().equals(session.getId()))
                 .collect(Collectors.toList());
@@ -249,7 +222,6 @@ public class SessionService {
         }
     }
 
-    // Вспомогательный метод для преобразования в DTO (расширенный)
     private SessionDTO convertToDTO(Session session) {
         if (session == null) return null;
 

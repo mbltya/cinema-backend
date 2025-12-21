@@ -37,10 +37,4 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser() {
-        // Этот метод будет использовать SecurityContext для получения текущего пользователя
-        // Реализуем позже
-        return ResponseEntity.ok(Map.of("message", "Current user endpoint"));
-    }
 }

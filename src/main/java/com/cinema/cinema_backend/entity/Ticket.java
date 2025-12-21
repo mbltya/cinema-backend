@@ -29,9 +29,8 @@ public class Ticket {
     @Enumerated(EnumType.STRING)
     private TicketStatus status;
 
-    private String qrCode; // Для электронного билета
+    private String qrCode;
 
-    // Constructors
     public Ticket() {}
 
     public Ticket(User user, Session session, Integer rowNumber, Integer seatNumber, Double price) {
@@ -44,7 +43,6 @@ public class Ticket {
         this.status = TicketStatus.PENDING;
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

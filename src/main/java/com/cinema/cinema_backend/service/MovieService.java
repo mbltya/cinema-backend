@@ -36,7 +36,6 @@ public class MovieService {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Movie", id));
 
-        // Обновляем только переданные поля
         if (movieDetails.getTitle() != null) {
             movie.setTitle(movieDetails.getTitle());
         }

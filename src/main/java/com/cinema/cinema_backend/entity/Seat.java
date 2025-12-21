@@ -25,15 +25,12 @@ public class Seat {
     @Enumerated(EnumType.STRING)
     private SeatStatus status = SeatStatus.AVAILABLE;
 
-    public Seat() {}
-
     public Seat(Hall hall, Integer rowNumber, Integer seatNumber) {
         this.hall = hall;
         this.rowNumber = rowNumber;
         this.seatNumber = seatNumber;
     }
 
-    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

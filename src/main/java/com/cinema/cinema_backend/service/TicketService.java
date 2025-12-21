@@ -7,6 +7,7 @@ import com.cinema.cinema_backend.repository.TicketRepository;
 import com.cinema.cinema_backend.repository.SessionRepository;
 import com.cinema.cinema_backend.repository.UserRepository;
 import com.cinema.cinema_backend.service.dto.CreateTicketDTO;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,6 @@ public class TicketService {
     @Autowired
     private UserRepository userRepository;
 
-    // Получить все билеты
     @Transactional(readOnly = true)
     public List<TicketDTO> getAllTickets() {
         return ticketRepository.findAll().stream()
@@ -36,7 +36,6 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    // Получить билет по ID
     @Transactional(readOnly = true)
     public TicketDTO getTicketById(Long id) {
         Ticket ticket = ticketRepository.findById(id)
@@ -44,7 +43,6 @@ public class TicketService {
         return convertToDTO(ticket);
     }
 
-    // Создать билет (бронирование)
     @Transactional
     public TicketDTO createTicket(CreateTicketDTO dto) {
         System.out.println("\n=== CREATING TICKET ===");
@@ -52,28 +50,23 @@ public class TicketService {
         System.out.println("Session ID: " + dto.getSessionId());
         System.out.println("Row: " + dto.getRowNumber() + ", Seat: " + dto.getSeatNumber());
 
-        // Проверка пользователя
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User", dto.getUserId()));
 
-        // Проверка сеанса
         Session session = sessionRepository.findById(dto.getSessionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Session", dto.getSessionId()));
 
         System.out.println("Session exists: " + (session != null));
         System.out.println("Session time: " + session.getStartTime());
 
-        // Проверка, что сеанс еще не прошел
         if (session.getStartTime().isBefore(LocalDateTime.now())) {
             System.out.println("ERROR: Session already started");
             throw new IllegalArgumentException("Cannot book ticket for past session");
         }
 
-        // Проверка доступности места
         System.out.println("Checking seat availability...");
         validateSeatAvailability(session.getId(), dto.getRowNumber(), dto.getSeatNumber());
 
-        // Проверка, что место существует в зале
         Hall hall = session.getHall();
         System.out.println("Hall rows: " + hall.getRows() + ", seats per row: " + hall.getSeatsPerRow());
 
@@ -84,7 +77,6 @@ public class TicketService {
             throw new IllegalArgumentException("Invalid seat number. Hall has " + hall.getSeatsPerRow() + " seats per row");
         }
 
-        // Создание билета
         Ticket ticket = new Ticket();
         ticket.setUser(user);
         ticket.setSession(session);
@@ -99,14 +91,12 @@ public class TicketService {
         return convertToDTO(savedTicket);
     }
 
-    // Массовое создание билетов
     @Transactional
     public List<TicketDTO> createMultipleTickets(List<CreateTicketDTO> dtos) {
         if (dtos.isEmpty()) {
             throw new IllegalArgumentException("No tickets to create");
         }
 
-        // Проверяем, что все билеты на один сеанс и одного пользователя
         Long sessionId = dtos.get(0).getSessionId();
         Long userId = dtos.get(0).getUserId();
 
@@ -119,12 +109,10 @@ public class TicketService {
             }
         }
 
-        // Проверяем доступность всех мест
         for (CreateTicketDTO dto : dtos) {
             validateSeatAvailability(dto.getSessionId(), dto.getRowNumber(), dto.getSeatNumber());
         }
 
-        // Создаем билеты
         List<TicketDTO> createdTickets = new ArrayList<>();
         for (CreateTicketDTO dto : dtos) {
             createdTickets.add(createTicket(dto));
@@ -133,7 +121,6 @@ public class TicketService {
         return createdTickets;
     }
 
-    // Подтвердить оплату
     @Transactional
     public TicketDTO confirmTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
@@ -153,13 +140,11 @@ public class TicketService {
         return convertToDTO(ticket);
     }
 
-    // Отменить билет
     @Transactional
     public TicketDTO cancelTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket", ticketId));
 
-        // Проверяем, можно ли отменить билет
         if (ticket.getSession().getStartTime().isBefore(LocalDateTime.now().minusHours(1))) {
             throw new IllegalStateException("Cannot cancel ticket less than 1 hour before session");
         }
@@ -170,7 +155,6 @@ public class TicketService {
         return convertToDTO(ticket);
     }
 
-    // Пометить билет как использованный
     @Transactional
     public TicketDTO useTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
@@ -190,23 +174,19 @@ public class TicketService {
         return convertToDTO(ticket);
     }
 
-    // Обновить билет
     @Transactional
     public TicketDTO updateTicket(Long ticketId, CreateTicketDTO dto) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket", ticketId));
 
-        // Можно обновлять только билеты в статусе PENDING
         if (ticket.getStatus() != TicketStatus.PENDING) {
             throw new IllegalStateException("Can only update tickets in PENDING status");
         }
 
-        // Проверяем новое место, если оно изменилось
         if (!ticket.getRowNumber().equals(dto.getRowNumber()) ||
                 !ticket.getSeatNumber().equals(dto.getSeatNumber())) {
             validateSeatAvailability(ticket.getSession().getId(), dto.getRowNumber(), dto.getSeatNumber());
 
-            // Проверяем, что новое место существует в зале
             Hall hall = ticket.getSession().getHall();
             if (dto.getRowNumber() > hall.getRows() || dto.getRowNumber() <= 0) {
                 throw new IllegalArgumentException("Invalid row number");
@@ -223,7 +203,6 @@ public class TicketService {
         return convertToDTO(updatedTicket);
     }
 
-    // Удалить билет
     @Transactional
     public void deleteTicket(Long id) {
         if (!ticketRepository.existsById(id)) {
@@ -232,7 +211,6 @@ public class TicketService {
         ticketRepository.deleteById(id);
     }
 
-    // Получить билеты пользователя
     @Transactional(readOnly = true)
     public List<TicketDTO> getTicketsByUser(Long userId) {
         return ticketRepository.findByUserId(userId).stream()
@@ -240,7 +218,6 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    // Получить активные билеты пользователя
     @Transactional(readOnly = true)
     public List<TicketDTO> getActiveTicketsByUser(Long userId) {
         return ticketRepository.findActiveTicketsByUser(userId).stream()
@@ -248,7 +225,6 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    // Получить билеты пользователя по статусу
     @Transactional(readOnly = true)
     public List<TicketDTO> getTicketsByUserAndStatus(Long userId, String status) {
         try {
@@ -261,7 +237,6 @@ public class TicketService {
         }
     }
 
-    // Получить билеты на сеанс
     @Transactional(readOnly = true)
     public List<TicketDTO> getTicketsBySession(Long sessionId) {
         return ticketRepository.findBySessionId(sessionId).stream()
@@ -269,7 +244,6 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    // Получить забронированные места на сеанс
     @Transactional(readOnly = true)
     public List<String> getBookedSeats(Long sessionId) {
         return ticketRepository.findBySessionId(sessionId).stream()
@@ -279,13 +253,11 @@ public class TicketService {
                 .collect(Collectors.toList());
     }
 
-    // Проверить доступность места
     @Transactional(readOnly = true)
     public boolean checkSeatAvailability(Long sessionId, Integer rowNumber, Integer seatNumber) {
         return !ticketRepository.isSeatTaken(sessionId, rowNumber, seatNumber);
     }
 
-    // Получить статистику по билетам
     @Transactional(readOnly = true)
     public Map<String, Object> getTicketStatistics(LocalDate startDate, LocalDate endDate) {
         if (startDate.isAfter(endDate)) {
@@ -305,12 +277,10 @@ public class TicketService {
                 .mapToDouble(Ticket::getPrice)
                 .sum());
 
-        // Статистика по статусам
         Map<TicketStatus, Long> statusCount = tickets.stream()
                 .collect(Collectors.groupingBy(Ticket::getStatus, Collectors.counting()));
         statistics.put("statusDistribution", statusCount);
 
-        // Статистика по сеансам
         Map<Long, Long> sessionCount = tickets.stream()
                 .collect(Collectors.groupingBy(t -> t.getSession().getId(), Collectors.counting()));
         statistics.put("ticketsPerSession", sessionCount);
@@ -318,7 +288,12 @@ public class TicketService {
         return statistics;
     }
 
-    // Вспомогательные методы
+    public boolean isTicketOwner(Long ticketId, Long userId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new EntityNotFoundException("Ticket not found with id: " + ticketId));
+        return ticket.getUser().getId().equals(userId);
+    }
+
     private void validateSeatAvailability(Long sessionId, Integer rowNumber, Integer seatNumber) {
         System.out.println("Validating seat: session=" + sessionId +
                 ", row=" + rowNumber + ", seat=" + seatNumber);
@@ -340,7 +315,6 @@ public class TicketService {
         return "TICKET-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    // Преобразование в DTO
     private TicketDTO convertToDTO(Ticket ticket) {
         if (ticket == null) return null;
 
